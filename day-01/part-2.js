@@ -1,15 +1,16 @@
-const { readFileSync } = require('fs');
-const path = require('path');
-const { flip, last, map, pipe, prop, split, until } = require('ramda');
+const { join } = require('path');
+const { map, pipe, prop, split, until } = require('ramda');
 const daggy = require('daggy');
+const { readFile, toInt } = require('../helpers');
 
-const input = readFileSync(path.join(__dirname, 'codes.txt')).toString('utf8');
+const input = readFile(join(__dirname, 'codes.txt'));
 
-const toInt = flip(parseInt)(10);
+// inputToArray :: String -> [Number]
 const inputToArray = pipe(split('\n'), map(toInt));
 
 const inputGenerator = (function*(inputArray) {
   let currentIndex = 0;
+
   while(true) {
     yield inputArray[currentIndex];
     currentIndex = (currentIndex === inputArray.length - 1) ? 0 : currentIndex + 1;
@@ -18,28 +19,28 @@ const inputGenerator = (function*(inputArray) {
 
 const getNextInput = () => inputGenerator.next().value;
 
-const RunningResult = daggy.tagged(
-  'RunningResult',
-  [ 'seenList', 'result', 'isResultSeen' ]
-);
-
-RunningResult.prototype.add = function(item) {
-  console.log(this.result, item);
-  const result = this.result + item;
-
+const RunningResult = daggy.tagged('RunningResult', [ 'seenList', 'result' ]);
+RunningResult.prototype.add = function(num) {
   return RunningResult(
-    [ ...this.seenList, result ],
-    result,
-    this.seenList.includes(result)
+    [ ...this.seenList, this.result ],  // I suspect this is what's taking time
+    this.result + num
   );
 };
 
-const createRunningResult = initialValue => RunningResult([], initialValue, false);
+// createRunningResult :: Number -> RunningResult
+const createRunningResult = initialValue => RunningResult([], initialValue);
 
+// getFirstRepeat :: Number -> Number
 const getFirstRepeat = pipe(
-  until(prop('isResultSeen'), r => r.add(getNextInput())),
-  prop('seenList'),
-  last
+  createRunningResult,
+  until(
+    r => r.seenList.includes(r.result),
+    r => r.add(getNextInput())
+  ),
+  prop('result')
 );
 
-console.log(getFirstRepeat(createRunningResult(0)));
+console.log('This will take a couple of minutes...');
+console.time('totalTime');
+console.log(getFirstRepeat(0));
+console.timeEnd('totalTime');

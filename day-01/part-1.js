@@ -1,8 +1,6 @@
-const { readFileSync } = require('fs');
-const path = require('path');
-const { add, flip, map, pipe, reduce, split } = require('ramda');
-
-const toInt = flip(parseInt)(10);
+const { join } = require('path');
+const { readFile, toInt } = require('../helpers');
+const { add, map, pipe, reduce, split } = require('ramda');
 
 const getResult = pipe(
   split('\n'),
@@ -10,5 +8,5 @@ const getResult = pipe(
   reduce(add, 0)
 );
   
-const input = readFileSync(path.join(__dirname, 'codes.txt')).toString('utf8');
+const input = readFile(join(__dirname, 'codes.txt'));
 console.log(getResult(input));
