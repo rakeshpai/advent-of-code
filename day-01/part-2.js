@@ -8,21 +8,29 @@ const input = readFile(join(__dirname, 'codes.txt'));
 // inputToArray :: String -> [Number]
 const inputToArray = pipe(split('\n'), map(toInt));
 
-const inputGenerator = (function*(inputArray) {
-  let currentIndex = 0;
+// Impure! Returns the next input
+// Hey, it's an excuse to use generators
+const getNextInput = (() => {
+  const inputArray = inputToArray(input);
 
-  while(true) {
-    yield inputArray[currentIndex];
-    currentIndex = (currentIndex === inputArray.length - 1) ? 0 : currentIndex + 1;
-  }
-})(inputToArray(input));
+  const inputGenerator = (function*() {
+    let currentIndex = 0;
+    let iterationCount = 0;
 
-const getNextInput = () => inputGenerator.next().value;
+    while(true) {
+      yield inputArray[currentIndex];
+      currentIndex = (currentIndex === inputArray.length - 1) ? 0 : currentIndex + 1;
+      if(currentIndex === 0) console.log('Iteration', ++iterationCount);
+    }
+  })();
+
+  return () => inputGenerator.next().value;
+})();
 
 const RunningResult = daggy.tagged('RunningResult', [ 'seenList', 'result' ]);
 RunningResult.prototype.add = function(num) {
   return RunningResult(
-    [ ...this.seenList, this.result ],  // I suspect this is what's taking time
+    [ ...this.seenList, this.result ],  // This cloning is what's taking time
     this.result + num
   );
 };

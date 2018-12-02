@@ -1,5 +1,4 @@
 const { readFileSync } = require('fs');
-const { join } = require('path');
 const { flip, pipe, trim } = require('ramda');
 
 // readFile :: String -> String
@@ -11,3 +10,6 @@ exports.readFile = pipe(
 
 // toInt :: a -> Number
 exports.toInt = flip(parseInt)(10);
+
+// trace :: a -> a
+exports.trace = (...args) => value => console.log(...args, value) || value;
