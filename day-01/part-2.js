@@ -11,20 +11,18 @@ const inputToArray = pipe(split('\n'), map(toInt));
 
 // Impure! Returns the next input
 // Hey, it's an excuse to use generators!
-const getNextInput = (() => {
-  const inputArray = inputToArray(input);
-
+const getNextInput = ((inputArray) => {
   const inputGenerator = (function*() {
     let currentIndex = 0;
 
     while(true) {
       yield inputArray[currentIndex];
-      currentIndex = (currentIndex === inputArray.length - 1) ? 0 : currentIndex + 1;
+      currentIndex = (currentIndex + 1) % inputArray.length;
     }
   })();
 
   return () => inputGenerator.next().value;
-})();
+})(inputToArray(input));
 
 const RunningResult = daggy.tagged('RunningResult', [ 'seenList', 'result' ]);
 RunningResult.prototype.add = function(num) {

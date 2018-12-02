@@ -1,7 +1,7 @@
 const { join: pathJoin } = require('path');
 const { readFile } = require('../helpers');
 const {
-  always, apply, converge, equals, filter,
+  always, apply, converge, equals, filter, find,
   head, identity, ifElse, join, map, length,
   pipe, reject, split, take, zip, zipWith
 } = require('ramda');
@@ -11,7 +11,10 @@ const stringToArray = split('');
 
 // isMatchingBoxIds :: String -> String -> Boolean
 const isMatchingBoxIds = aBoxId => pipe(
-  converge(zipWith(equals), [ always(stringToArray(aBoxId)), stringToArray ]),
+  converge(
+    zipWith(equals),
+    [ always(stringToArray(aBoxId)), stringToArray ]
+  ),
   reject(identity),
   length,
   equals(1)
@@ -20,13 +23,15 @@ const isMatchingBoxIds = aBoxId => pipe(
 const matchFinder = (boxId, index, boxIds) => {
   if(index === 0) return false;
 
-  const subset = take(index, boxIds);
-  const match = subset.find(isMatchingBoxIds(boxId));
+  const match = pipe(
+    take(index),
+    find(isMatchingBoxIds(boxId))
+  )(boxIds);
 
   return match ? [ boxId, match ] : false;
 };
 
-// findMatches :: [String] -> [[String, String]]
+// findMatches :: [String] -> [[String, String] | Boolean]
 const findMatches = a => a.map(matchFinder);
 
 // findMatch :: [String] -> [String]
