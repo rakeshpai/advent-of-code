@@ -1,5 +1,5 @@
 const { join: pathJoin } = require('path');
-const { readFile, trace } = require('../helpers');
+const { readFile } = require('../helpers');
 const {
   always, apply, converge, equals, filter,
   head, identity, ifElse, join, map, length,
