@@ -75,15 +75,16 @@ const countOverlappingCells = reduce(
 // hasMultipleOccupants :: List -> [Number, Number] -> Boolean
 const hasMultipleOccupants = fabric => ([x, y]) => fabric.get(x).get(y) !== 1
 
+// isNonOverlappingClaim :: List -> Claim -> Boolean
 const isNonOverlappingClaim = fabric => pipe(
   occupiedCells,
   find(hasMultipleOccupants(fabric)),
   not
 );
 
-// nonOverlappingClaim :: [Claim] -> List -> Claim
-const nonOverlappingClaim = (claims, fabric) =>
-  claims.find(isNonOverlappingClaim(fabric));
+// nonOverlappingClaim :: List -> [Claims] -> Claim
+const nonOverlappingClaim = fabric =>
+  find(isNonOverlappingClaim(fabric));
 
 // --- Go, go go!
 
@@ -91,5 +92,5 @@ const input = readFile(join(__dirname, 'claims.txt'));
 
 const claims = inputToClaims(input);
 const fabric = populateFabric(claims);
-console.log('Overlapping:', countOverlappingCells(fabric), 'sq.in.');
-console.log('Non-overlapping claim:', nonOverlappingClaim(claims, fabric).id);
+console.log('Overlapping area:', countOverlappingCells(fabric), 'sq.in.');
+console.log('Non-overlapping claim id:', nonOverlappingClaim(fabric)(claims).id);
