@@ -1,5 +1,8 @@
 const { readFileSync } = require('fs');
-const { curry, flip, pipe, trim } = require('ramda');
+const {
+  curry, defaultTo, inc, lensProp,
+  over, pipe, tap, trim
+} = require('ramda');
 
 // readFile :: String -> String
 exports.readFile = pipe(
@@ -8,12 +11,17 @@ exports.readFile = pipe(
   trim
 );
 
-// toInt :: a -> Number
-exports.toInt = flip(parseInt)(10);
+// trace :: b -> a -> a
+exports.trace = (...args) => tap(x => console.log(...args, x));
 
-// trace :: a -> a
-exports.trace = (...args) => value => console.log(...args, value) || value;
-
+// createReducer :: (b -> a -> a) -> ((a, b) -> a)
 exports.createReducer = fn => (acc, val) => curry(fn)(val)(acc);
 
-exports.switchCase = curry((cases, def, caseName, object) => cases[caseName] ? cases[caseName](object): def);
+// switchCase :: { k: fn, ... } -> b -> k -> a -> fn(a) | b
+exports.switchCase = curry(
+  (cases, def, caseName, a) =>
+    cases[caseName] ? cases[caseName](a): def
+);
+
+// incrementProp :: String -> Object -> Object
+exports.incrementProp = prop => over(lensProp(prop), pipe( defaultTo(0), inc ));

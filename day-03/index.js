@@ -1,29 +1,30 @@
 const { join } = require('path');
 const {
-  add, always, applySpec, converge, find,
-  flip, gt, inc, map, match, not, pipe,
+  add, always, applySpec, converge, filter,
+  find, flip, gt, inc, map, match, not, pipe,
   prop, range, reduce, split, when, xprod
 } = require('ramda');
 const { List } = require('immutable');
-const { readFile, toInt } = require('../helpers');
+const { createReducer, readFile } = require('../helpers');
 
 // propToInt :: String -> Object -> Number
-const propToInt = p => pipe(prop(p), toInt);
+const propToNumber = p => pipe(prop(p), Number);
 
+// Claim :: Object
 // parseClaim :: String -> Claim
 const parseClaim = pipe(
   match(/#(\d+) @ (\d+),(\d+): (\d+)x(\d+)/),
   applySpec({
     input: prop('0'),
-    id: propToInt('1'),
-    left: propToInt('2'),
-    top: propToInt('3'),
-    width: propToInt('4'),
-    height: propToInt('5')
+    id: propToNumber('1'),
+    left: propToNumber('2'),
+    top: propToNumber('3'),
+    width: propToNumber('4'),
+    height: propToNumber('5')
   })
 );
 
-// inputToClaims :: String -> [Claims]
+// inputToClaims :: String -> [Claim]
 const inputToClaims = pipe(
   split('\n'),
   map(parseClaim)
@@ -55,7 +56,7 @@ const incrementValue = pipe(
 );
 
 // incrementCellOccupancy :: Claim -> List -> List
-const incrementCellOccupancy = (claim, list) =>
+const incrementCellOccupancy = claim => list =>
   occupiedCells(claim).reduce(
     (list, location) =>
       createRowIfNotExists(location[0], list)
@@ -64,11 +65,13 @@ const incrementCellOccupancy = (claim, list) =>
   );
 
 // populateFabric :: Claims -> List
-const populateFabric = reduce( flip(incrementCellOccupancy), List() );
+const populateFabric = reduce( createReducer(incrementCellOccupancy), List() );
 
 // countOverlappingCells :: List -> Number
 const countOverlappingCells = reduce(
-  (total, row) => row.filter(flip(gt)(1)).size + total,
+  createReducer(
+    pipe( filter(flip(gt)(1)), prop('size'), add )
+  ),
   0
 );
 
@@ -83,8 +86,7 @@ const isNonOverlappingClaim = fabric => pipe(
 );
 
 // nonOverlappingClaim :: List -> [Claims] -> Claim
-const nonOverlappingClaim = fabric =>
-  find(isNonOverlappingClaim(fabric));
+const nonOverlappingClaim = pipe(isNonOverlappingClaim, find);
 
 // --- Go, go go!
 

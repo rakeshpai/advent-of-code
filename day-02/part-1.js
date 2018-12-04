@@ -1,19 +1,14 @@
 const { join } = require('path');
-const { readFile } = require('../helpers');
+const { createReducer, incrementProp, readFile } = require('../helpers');
 const {
-  any, applySpec, converge, equals,
-  map, multiply, pipe, prop, reduce, split
+  add, any, applySpec, converge, defaultTo, equals, lensProp,
+  map, multiply, over, pipe, prop, reduce, split
 } = require('ramda');
-
-const incrementCharacterCount = (characterCounts, character) => ({
-  ...characterCounts,
-  [character]: (characterCounts[character] || 0) + 1
-});
 
 // boxIdCounts :: String -> Object
 const boxIdCounts = pipe(
   split(''),
-  reduce(incrementCharacterCount, {})
+  reduce(createReducer(incrementProp), {})
 );
 
 // hasCount :: Number -> Object -> Boolean
@@ -28,10 +23,16 @@ const countMatches = applySpec({ twos: hasCount(2), threes: hasCount(3) });
 // boxIdMatches :: String -> { twos: Boolean, threes: Boolean }
 const boxIdMatches = pipe(boxIdCounts, countMatches);
 
-const addMatches = (previousMatches, { twos, threes }) => ({
-  twos: (previousMatches.twos || 0) + twos,
-  threes: (previousMatches.threes || 0) + threes
-});
+// addToPropWithDefault :: String -> Number -> Object -> Object
+const addToPropWithDefault = (prop, num) =>
+  over(lensProp(prop), pipe(defaultTo(0), add(num)))
+
+const addMatches = createReducer(
+  ({ twos, threes }) => pipe(
+    addToPropWithDefault('twos', twos),
+    addToPropWithDefault('threes', threes)
+  )
+);
 
 // calculateChecksum :: String -> Number
 const calculateChecksum = pipe(

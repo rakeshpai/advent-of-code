@@ -1,13 +1,16 @@
 const { join } = require('path');
 const {
-  add, applySpec, assoc, compose, concat, converge,
-  defaultTo, filter, find, flip, groupBy, head, inc,
-  into, isNil, last, lensProp, map, match, multiply,
-  not, over, pipe, prop, propSatisfies, range,
-  reduce, sortBy, startsWith, unless
+  add, applySpec, assoc, compose,
+  converge, defaultTo, filter, find,
+  flatten, groupBy, head, identity,
+  inc, into, isNil, last, lensProp, map,
+  match, multiply, not, over, path, pipe,
+  prop, propSatisfies, range, reduce,
+  set, sortBy, startsWith, unless
 } = require('ramda');
 const leftPad = require('left-pad');
-const { createReducer, readFile, switchCase, toInt, trace } = require('../helpers');
+const { addHours } = require('date-fns/fp');
+const { createReducer, readFile, switchCase } = require('../helpers');
 
 // parseLogLine :: String -> Object
 const parseLogLine = pipe(
@@ -17,7 +20,7 @@ const parseLogLine = pipe(
     date: pipe(prop('1'), d => new Date(d)),
     day: prop('2'),
     hours: prop('3'),
-    minutes: pipe(prop('4'), toInt),
+    minutes: pipe(prop('4'), Number),
     log: prop('5')
   })
 );
@@ -26,7 +29,7 @@ const parseLogLine = pipe(
 const isGuardLog = startsWith('Guard #');
 
 // isSleepLog :: String -> Boolean
-const isSleepLog = pipe(isGuardLog, not);
+const isSleepLog = compose(not, isGuardLog);
 
 // extractGuardId :: [String] -> String
 const extractGuardId = pipe(
@@ -57,16 +60,18 @@ const getSleepingMinutes = pipe(
   prop('sleepingMinutes')
 );
 
-// createGroupingDateString :: Object -> Object
-const addGroupingKey = line => {
-  const dt = new Date(line.date);
-  dt.setHours(dt.getHours() + 1); // Guard might begin shift on the previous day
-
-  return {
-    ...line,
-    groupKey: `${dt.getFullYear()}-${leftPad(dt.getMonth() + 1, 2, '0')}-${leftPad(dt.getDate(), 2, '0')}`
-  };
-};
+// addGroupingKey :: Object -> Object
+const addGroupingKey = converge(
+  set(lensProp('groupKey')),
+  [
+    pipe(
+      prop('date'),
+      addHours(1),
+      dt => `${dt.getFullYear()}-${leftPad(dt.getMonth() + 1, 2, '0')}-${leftPad(dt.getDate(), 2, '0')}`
+    ),
+    identity
+  ]
+);
 
 // DailySleepLog :: Object
 // process :: String -> [DailySleepLog]
@@ -77,13 +82,11 @@ const process = pipe(
     groupBy(prop('groupKey'))
   )),
   Object.entries,
-  map(
-    applySpec({
-      day: head,
-      guardId: pipe(last, extractGuardId),
-      sleepingMinutes: pipe(last, getSleepingMinutes),
-    })
-  )
+  map(applySpec({
+    day: head,
+    guardId: pipe(last, extractGuardId),
+    sleepingMinutes: pipe(last, getSleepingMinutes),
+  }))
 );
 
 // GuardSleepLog :: Object
@@ -93,11 +96,14 @@ const sleepLogByGuard = pipe(
   Object.entries,
   map(applySpec({
     guardId: head,
+    entries: last,
     totalHours: pipe(
       last,
-      reduce(createReducer(({ sleepingMinutes }) => add(sleepingMinutes.length)), 0)
-    ),
-    entries: last
+      reduce(
+        createReducer( pipe(path(['sleepingMinutes', 'length']), add) ),
+        0
+      )
+    )
   })),
 );
 
@@ -112,7 +118,7 @@ const guardThatSleepsTheMost = pipe(
 const sleepFrequencyByMinute = pipe(
   prop('entries'),
   map(prop('sleepingMinutes')),
-  reduce(flip(concat), []), // flatten, expressed as a reduce
+  flatten,
   reduce( createReducer(minute => over(lensProp(minute), pipe(defaultTo(0), inc))), {} )
 );
 
