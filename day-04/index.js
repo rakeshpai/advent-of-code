@@ -1,8 +1,8 @@
 const { join } = require('path');
 const {
-  add, applySpec, assoc, converge, defaultTo,
-  filter, find, flatten, groupBy, head, inc,
-  isNil, last, lensProp, map, match, multiply,
+  add, applySpec, assoc, compose, concat, converge,
+  defaultTo, filter, find, flip, groupBy, head, inc,
+  into, isNil, last, lensProp, map, match, multiply,
   not, over, pipe, prop, propSatisfies, range,
   reduce, sortBy, startsWith, unless
 } = require('ramda');
@@ -30,8 +30,10 @@ const isSleepLog = pipe(isGuardLog, not);
 
 // extractGuardId :: [String] -> String
 const extractGuardId = pipe(
-  map(prop('log')),
-  find(isGuardLog),
+  into('', compose(
+    map(prop('log')),
+    find(isGuardLog),
+  )),
   match(/Guard #(\d+)/),
   prop('1')
 );
@@ -55,13 +57,6 @@ const getSleepingMinutes = pipe(
   prop('sleepingMinutes')
 );
 
-// processDay :: [String, Object] -> Object
-const processDay = applySpec({
-  day: head,
-  guardId: pipe(last, extractGuardId),
-  sleepingMinutes: pipe(last, getSleepingMinutes),
-});
-
 // createGroupingDateString :: Object -> Object
 const addGroupingKey = line => {
   const dt = new Date(line.date);
@@ -76,11 +71,19 @@ const addGroupingKey = line => {
 // DailySleepLog :: Object
 // process :: String -> [DailySleepLog]
 const process = pipe(
-  map(parseLogLine),
-  map(addGroupingKey),
-  groupBy(prop('groupKey')),
+  into({}, compose(
+    map(parseLogLine),
+    map(addGroupingKey),
+    groupBy(prop('groupKey'))
+  )),
   Object.entries,
-  map(processDay)
+  map(
+    applySpec({
+      day: head,
+      guardId: pipe(last, extractGuardId),
+      sleepingMinutes: pipe(last, getSleepingMinutes),
+    })
+  )
 );
 
 // GuardSleepLog :: Object
@@ -109,7 +112,7 @@ const guardThatSleepsTheMost = pipe(
 const sleepFrequencyByMinute = pipe(
   prop('entries'),
   map(prop('sleepingMinutes')),
-  flatten,
+  reduce(flip(concat), []), // flatten, expressed as a reduce
   reduce( createReducer(minute => over(lensProp(minute), pipe(defaultTo(0), inc))), {} )
 );
 
@@ -137,8 +140,10 @@ const strategy1 = pipe(
 // strategy2 :: [DailySleepLog] -> Number
 const strategy2 = pipe(
   sleepLogByGuard,
-  map( converge(assoc('guardId'), [ prop('guardId'), mostSleptMinute ]) ),
-  filter(pipe(prop('count'), isNil, not)),
+  into([], compose(
+    map( converge(assoc('guardId'), [ prop('guardId'), mostSleptMinute ]) ),
+    filter(pipe(prop('count'), isNil, not)),
+  )),
   sortBy(prop('count')),
   last,
   converge(multiply, [ prop('guardId'), prop('minute') ])
