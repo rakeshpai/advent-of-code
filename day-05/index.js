@@ -1,27 +1,27 @@
 const { join } = require('path');
 const {
-  add, applySpec, allPass, assoc, compose,
-  converge, curry, defaultTo, equals, filter, find,
-  flatten, flip, fromPairs, groupBy, head, identity,
-  inc, invoker, into, isNil, last, length, lensProp, map,
-  match, multiply, not, over, pair, path, pathEq, pipe,
-  prop, propSatisfies, range, reduce, replace,
-  set, sortBy, startsWith, toUpper, unless, until
+  converge, flip, length, map,
+  not, pipe, prop, range, reduce,
+  replace, toUpper, until
 } = require('ramda');
-const { List } = require('immutable');
-const { tagged } = require('daggy');
-const { createReducer, readFile, switchCase, trace } = require('../helpers');
+const { createReducer, readFile } = require('../helpers');
 
-const fromCharCode = x => String.fromCharCode(x);
-const charToRegex = c => new RegExp(`((${c}${toUpper(c)})|(${toUpper(c)}${c}))`, 'g');
-
+// charCodes :: [Number]
 const charCodes = range(97, 123);
-const charCodesToRegex = map( pipe(fromCharCode, charToRegex) );
+
+// fromCharCode :: Number -> Char
+const fromCharCode = x => String.fromCharCode(x);
+
+// reactionRegex :: Char -> RegExp
+const reactionRegex = c => new RegExp(`((${c}${toUpper(c)})|(${toUpper(c)}${c}))`, 'g');
+
+// charCodesToReactionRegExps :: [Number] -> [RegExp]
+const charCodesToReactionRegExps = map( pipe(fromCharCode, reactionRegex) );
 
 // doAPass :: String -> String
 const doAPass = flip(
   reduce(createReducer(flip(replace)('')))
-)(charCodesToRegex(charCodes));
+)(charCodesToReactionRegExps(charCodes));
 
 // doAPassWithChangeTracking :: String -> { result: String, changed: Boolean }
 const doAPassWithChangeTracking = converge(
@@ -39,6 +39,10 @@ const reactPolymers = pipe(
   prop('result')
 );
 
+// reactedPolymerLength :: String -> Number
+const reactedPolymerLength = pipe(reactPolymers, length);
+
+// charRemoverRegex :: Char -> RegExp
 const charRemoverRegex = char => new RegExp(`[${char}${toUpper(char)}]`, 'g');
 
 // removeUnit :: Char -> String -> String
@@ -46,9 +50,7 @@ const removeUnit = pipe(charRemoverRegex, flip(replace)(''));
 
 // removeUnitReactAndGetLength :: Char -> String -> Number
 const removeUnitReactAndGetLength = char => pipe(
-  removeUnit(char),
-  reactPolymers,
-  length
+  removeUnit(char), reactedPolymerLength
 );
 
 // removedReactionLengthFns :: [Char] -> [(String -> Number)]
@@ -61,5 +63,5 @@ const shortestPolymerLength = converge(Math.min, removedReactionLengthFns(charCo
 
 const input = readFile(join(__dirname, 'polymer.txt')).trim();
 
-console.log(reactPolymers(input).length);
+console.log(reactedPolymerLength(input));
 console.log(shortestPolymerLength(input));
