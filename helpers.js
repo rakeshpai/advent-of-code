@@ -25,3 +25,6 @@ exports.switchCase = curry(
 
 // incrementProp :: String -> Object -> Object
 exports.incrementProp = prop => over(lensProp(prop), pipe( defaultTo(0), inc ));
+
+exports.time = key => tap(() => console.time(key));
+exports.timeEnd = key => tap(() => console.timeEnd(key));
