@@ -7,8 +7,7 @@ const {
   reject, sort, split, sum, tail,
   toPairs, trim, uniq
 } = require('ramda');
-const { taggedSum } = require('daggy');
-const { createReducer, readFile, trace } = require('../helpers');
+const { readFile } = require('../helpers');
 
 // abs :: Number -> Number
 const abs = x => Math.abs(x);
@@ -88,25 +87,26 @@ const cellsAtEdges = pipe(
   uniq
 );
 
-const sizeOfLargestBoundArea = pipe(
-  grid => {
-    const edgeIds = cellsAtEdges(grid);
-    const flatGrid = flatten(grid);
+// sizeOfLargestBoundArea :: Grid -> Number
+const sizeOfLargestBoundArea = grid => {
+  const edgeIds = cellsAtEdges(grid);
+  const flatGrid = flatten(grid);
 
-    return pipe(
-      reject(flip(contains)(edgeIds)),
-      countBy(identity),
-      toPairs,
-      sort(descend(last)),
-      head,
-      last
-    )(flatGrid);
-  }
-);
+  return pipe(
+    reject(flip(contains)(edgeIds)),
+    countBy(identity),
+    toPairs,
+    sort(descend(last)),
+    head,
+    last
+  )(flatGrid);
+};
 
+// getClosestId :: [Coordinate] -> Coordinate -> Number
 const getClosestId = coords => coord =>
   closestId(distances(coord)(coords));
 
+// isWithinRegion :: [Coordinate] -> Coordinate -> Boolean
 const isWithinRegion = coords => coord =>
   pipe(
     map(distance),
