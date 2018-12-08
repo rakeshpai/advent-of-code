@@ -1,11 +1,12 @@
 const { join: pathJoin } = require('path');
 const {
-  addIndex, add, all, always, apply, applySpec, append,
-  both, concat, converge, cond, countBy, curry, difference, equals,
-  filter, flatten, flip, head, identity, ifElse, inc, includes, isNil,
-  join, juxt, last, length, lensProp, lt, map, match, not, over, pipe, prop, range,
-  reduce, reject, sortBy, split, sum, tail,
-  toPairs, trim, uniq, until, view
+  add, all, always, apply, applySpec, append,
+  both, concat, converge, cond, curry,
+  difference, equals, filter, flip, head,
+  identity, inc, includes, isNil, join,
+  length, lensProp, map, match, not, over,
+  pipe, prop, range, reduce, reject, sortBy,
+  split, uniq, until, view
 } = require('ramda');
 const { createReducer, readFile, trace } = require('../helpers');
 
@@ -213,6 +214,7 @@ const part2 = numElves => pipe(
       pipe( prop('elves'), reject(isNil), length, equals(0) )
     ),
     pipe(
+      // tap(x => console.log(x.time, x.elves.map(prop('task')).join(' '), x.done.join(''))),
       markTasksCompleted,
       allocateTasks(nodes),
       advanceTime
@@ -223,4 +225,4 @@ const part2 = numElves => pipe(
 
 const input = readFile(pathJoin(__dirname, 'instructions.txt')).trim();
 console.log(part1(input));
-console.log(part2(5)(input));
+console.log(part2(4)(input));
