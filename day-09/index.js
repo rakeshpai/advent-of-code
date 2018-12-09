@@ -45,6 +45,12 @@ const playerIndex = flip(modulo);
 const isRegularIteration = i => (i + 1) % 23 !== 0;
 
 // Game: { node: Node, scores: [Number] }
+
+// node :: Lens
+const node = lensProp('node');
+// score :: Number -> Lens
+const score = playerIndex => lensPath([ 'scores', playerIndex ]);
+
 // createGame :: Number -> Game
 const createGame = playerCount => {
   let node = createNode(0);
@@ -58,24 +64,24 @@ const createGame = playerCount => {
 };
 
 // addMarble :: Node -> Game -> Game
-const addMarble = pipe(insertAfter, over(lensProp('node')));
+const addMarble = pipe(insertAfter, over(node));
 
 // updateScore :: Number -> Game -> Game
 const updateScore = iterationIndex => game =>
   over(
-    lensPath([ 'scores', playerIndex(game.scores.length, iterationIndex) ]),
+    score(playerIndex(game.scores.length, iterationIndex)),
     add(iterationIndex + 1 + game.node.value),
     game
   );
 
 // removeMarble :: Node -> Game -> Game
-const removeMarble = over(lensProp('node'), removeNode);
+const removeMarble = over(node, removeNode);
 
 // goForward2inGame :: Game -> Game
-const goForward2inGame = over(lensProp('node'), goForward2);
+const goForward2inGame = over(node, goForward2);
 
 // goBack7inGane :: Game -> Game
-const goBack7inGane = over(lensProp('node'), goBack7);
+const goBack7inGane = over(node, goBack7);
 
 // makeRegularMove :: Number -> Game -> Game
 const makeRegularMove = iterationIndex => pipe(
