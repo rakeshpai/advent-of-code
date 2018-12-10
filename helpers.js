@@ -1,7 +1,8 @@
 const { readFileSync } = require('fs');
 const {
-  curry, defaultTo, inc, lensProp,
-  over, pipe, tap, trim
+  applySpec, curry, converge, defaultTo,
+  inc, identity, lensProp, merge, over,
+  pipe, tap, trim
 } = require('ramda');
 
 // readFile :: String -> String
@@ -25,6 +26,9 @@ exports.switchCase = curry(
 
 // incrementProp :: String -> Object -> Object
 exports.incrementProp = prop => over(lensProp(prop), pipe( defaultTo(0), inc ));
+
+// mergeSpec :: { k: fn, ... } -> a -> { k: fn(a), ... }
+exports.mergeSpec = spec => converge(merge, [ identity, applySpec(spec)]);
 
 exports.time = key => tap(() => console.time(key));
 exports.timeEnd = key => tap(() => console.timeEnd(key));
