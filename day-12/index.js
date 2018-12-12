@@ -1,7 +1,7 @@
 const { join } = require('path');
 const {
   applySpec, fromPairs, map,
-  pipe, prop, range, trim
+  pipe, prop, range, split, trim
 } = require('ramda');
 const { readFile } = require('../helpers');
 
