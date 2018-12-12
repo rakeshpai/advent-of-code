@@ -1,11 +1,7 @@
 const { join } = require('path');
 const {
-  addIndex, add, always, apply, applySpec,
-  ascend, converge, contains, countBy, descend, equals,
-  filter, flatten, flip, fromPairs, head, identity, ifElse,
-  juxt, last, length, lensProp, lt, map, over, pipe, prop, range,
-  reject, sort, split, sum, tail,
-  toPairs, trim, uniq
+  applySpec, fromPairs, map,
+  pipe, prop, range, trim
 } = require('ramda');
 const { readFile } = require('../helpers');
 
@@ -46,15 +42,15 @@ const padInput = input => (
 );
 
 // nextGeneration :: Rules -> String -> String
-const nextGeneration = rules => previousGeneration => {
-  let nextGen = '..';
-  range(2, previousGeneration.length - 2).forEach(index => {
-    const key = previousGeneration.slice(index - 2, index + 3);
-    nextGen += rules[key] || '.';
-  });
+const nextGeneration = rules => previousGeneration =>
+  range(2, previousGeneration.length - 2).reduce(
+    (acc, index) => {
+      const key = previousGeneration.slice(index - 2, index + 3);
+      return acc + (rules[key] || '.');
+    },
+    '..'
+  ) + '..';
 
-  return nextGen + '..';
-};
 
 // score :: String -> Number
 const score = state => range(-padding, state.length - padding).reduce(
